@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>CORS PoC Input</title>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 800px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 6px; margin-top: 4px; }
+    textarea { font-family: monospace; height: 120px; }
+    button { padding: 8px 14px; margin-top: 14px; }
+    .err { color: red; }
+  </style>
+</head>
+<body>
+  <h2>CORS PoC — Enter Details</h2>
+
+  <label>Request method:
+    <select id="method">
+      <option value="GET">GET</option>
+      <option value="POST">POST</option>
+    </select>
+  </label>
+
+  <label>Target URL:
+    <input id="url" value="">
+  </label>
+
+  <label>Bearer token:
+    <input id="token" value="">
+  </label>
+
+  <div id="postDataWrapper" style="display:none;">
+    <label>POST request body (JSON):
+      <textarea id="postData">{ "example": "value" }</textarea>
+    </label>
+  </div>
+
+  <button id="go">Send request</button>
+  <div id="msg"></div>
+
+<script>
+const methodSel = document.getElementById('method');
+const postDataWrapper = document.getElementById('postDataWrapper');
+const msg = document.getElementById('msg');
+
+methodSel.addEventListener('change', () => {
+  postDataWrapper.style.display = (methodSel.value === 'POST') ? 'block' : 'none';
+});
+
+document.getElementById('go').addEventListener('click', async () => {
+  const url = document.getElementById('url').value.trim();
+  const token = document.getElementById('token').value.trim();
+  const method = methodSel.value;
+  const postBody = document.getElementById('postData').value.trim();
+
+  msg.textContent = 'Sending request...';
+  msg.className = '';
+
+  const fetchOptions = {
+    method,
+    mode: 'cors',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    }
+  };
+
+  if (method === 'POST') {
+    try {
+      fetchOptions.body = JSON.stringify(JSON.parse(postBody));
+    } catch(e) {
+      msg.textContent = 'Invalid JSON in POST body!';
+      msg.className = 'err';
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch(url, fetchOptions);
+    const hdrs = {};
+    res.headers.forEach((v,k) => hdrs[k] = v);
+
+    let bodyText;
+    try {
+      const json = await res.json();
+      bodyText = JSON.stringify(json, null, 2);
+    } catch(e) {
+      bodyText = await res.text();
+    }
+
+    // Store in localStorage so the next page can read it
+    localStorage.setItem('corsResult', JSON.stringify({
+      status: res.status,
+      statusText: res.statusText,
+      headers: hdrs,
+      body: bodyText
+    }));
+
+    // Redirect to result page
+    window.location.href = 'result.html';
+  } catch (err) {
+    msg.textContent = 'Fetch failed — CORS or network error.';
+    msg.className = 'err';
+    console.error(err);
+  }
+});
+</script>
+</body>
+</html>

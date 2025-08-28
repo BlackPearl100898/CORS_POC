@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>CORS PoC Result</title>
+  <style>
+    body { font-family: monospace; padding: 20px; white-space: pre-wrap; }
+    h4,h5 { font-family: Arial; }
+    pre { background: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h2>CORS PoC — Response</h2>
+  <div id="output"></div>
+
+<script>
+function escapeHtml(s) {
+  return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const data = JSON.parse(localStorage.getItem('corsResult') || '{}');
+if (!data.status) {
+  document.getElementById('output').innerHTML = '<p style="color:red;">No data found. Please go back and send a request.</p>';
+} else {
+  document.getElementById('output').innerHTML = `
+    <h4>HTTP ${data.status} ${data.statusText}</h4>
+    <h5>Headers</h5>
+    <pre>${escapeHtml(JSON.stringify(data.headers, null, 2))}</pre>
+    <h5>Body</h5>
+    <pre>${escapeHtml(data.body)}</pre>
+  `;
+}
+</script>
+</body>
+</html>
